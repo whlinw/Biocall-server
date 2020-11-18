@@ -1,0 +1,16 @@
+{
+  "name": "biocall-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node main.js"
+  },
+  "author": "Arne Reijntjes",
+  "license": "ISC",
+  "dependencies": {
+    "node-osc": "^4.1.8",
+    "socket.io": "^2.3.0"
+  }
+}
