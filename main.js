@@ -80,15 +80,18 @@ function setSpoofGSR(room, bool) {
 
 function setSpoofValueGSR(room, data) {
 	rooms[room].setSpoofValue('gsr', parseFloat(data));
-	io.to(room).emit('setSpoofValueGSR', data)
+	// io.to(room).emit('setSpoofValueGSR', data)
 }
 
 function setClientShowing(room, element, value) {
+	console.log('setClientShowing:', element, value);
 	rooms[room].showClient[element] = value;
 	io.to(room).emit('showToClient' + element, value);
 }
 
 io.on('connection', (socket) => {
+	console.log('New connection:', socket.id);
+
 	socket.on('createRoom', name => {
 		console.log('createRoom:', name);
 		let room = createRoom(socket.id, name);
@@ -133,15 +136,15 @@ io.on('connection', (socket) => {
 		console.log('Rooms:', rooms);
 	});
 
-	socket.on('gsrData', data => { addData('gsr', Object.keys(socket.rooms)[1], data); });
+	socket.on('gsrData', data => {addData('gsr', Object.keys(socket.rooms)[1], data); });
 
 	socket.on('spoofBorder', bool => { setSpoofBorder(Object.keys(socket.rooms)[1], bool) });
 	socket.on('spoofValue', value => { setSpoofValue(Object.keys(socket.rooms)[1], value) });
 	socket.on('spoofGSR', bool => { setSpoofGSR(Object.keys(socket.rooms)[1], bool) });
 	socket.on('spoofValueGSR', value => { setSpoofValueGSR(Object.keys(socket.rooms)[1], value) });
 
-	socket.on('showToClientBorder', data => {setClientShowing('Border', Object.keys(socket.rooms)[1], data)});
-	socket.on('showToClientStress', data => {setClientShowing('Stress', Object.keys(socket.rooms)[1], data)});
+	socket.on('showToClientBorder', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Border', data)});
+	socket.on('showToClientStress', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Stress', data)});
 });
 
 function checkRoom(room) {

@@ -2,7 +2,7 @@ class Room {
 	constructor(room, bioData) {
 		this.name = room;
 		this.bioData = {'gsr': {value: 0.0, min: 0, max: 1}}
-		this.showClient = {'border': false, 'stress': false};
+		this.showClient = {'Border': false, 'Stress': false};
 		this.spoof = {'border': {on: false, value: 0}, 'gsr': {on: false, value:1}}
 		this.numConnections = 0;
 		this.connections = [];
@@ -23,7 +23,7 @@ class Room {
 	 * @param {string} name - Name of the data
 	 * @param {TYPE} value - Data value
 	 */
-	setBioDataSingleValue(name, value) {
+	setBioData(name, value) {
 		let val = parseFloat(value);
 		this.bioData[name].value = val;
 
@@ -34,12 +34,6 @@ class Room {
 			this.bioData[name].min = val;
 		}
 	}
-
-	/*
-	setBioData(name, data) {
-		this.bioData[name] = data;
-	}
-	*/
 
 	getBioData(name) {
 		if(typeof name==='undefined') {
