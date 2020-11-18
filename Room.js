@@ -73,7 +73,7 @@ class Room {
 	}
 
 	removeConnection(id) {
-		this.connections.splice(this.connectedUser.indexOf(id), 1);
+		this.connections.splice(this.connections.indexOf(id), 1);
 		this.numConnections -= 1;
 	}
 

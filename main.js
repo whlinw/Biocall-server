@@ -6,29 +6,30 @@ const io = require('socket.io')(http);
 const PORT = 4001
 
 var rooms = {}
+var guestList = {}
 
-/* [TODO] handle existed rooms */
-function createRoom(id, room) {
+/* [TODO] handle existed rooms / REMOVE */
+function createRoom(id, room, socket) {
 	if (!(room in rooms)) {
 		rooms[room] = new Room(room);
 		rooms[room].addConnection(id);
-		sendData(room);
+		sendData(room, socket);
 		return room
 	}
 	return
 }
 
 /* [TODO] handle not exist rooms */
-function joinRoom(id, room) {
-	if (room in rooms) {
+function joinRoom(id, room, socket) {
+	if (!(room in rooms)) {
+		rooms[room] = new Room(room);
 		rooms[room].addConnection(id);
-		return room
+		sendData(room, socket);
+	} else {
+		rooms[room].addConnection(id);
 	}
-	return
-}
-
-function leaveRoom(id, name) {
-
+	guestList[id] = room;
+	console.log('JoinRoom:', rooms);
 }
 
 function addData(type, room, data) {
@@ -36,10 +37,8 @@ function addData(type, room, data) {
 	rooms[room].setBioData('gsr', data);
 }
 
-function sendData(room) {
+function sendData(room, socket) {
 	let bioData = rooms[room].getBioData();
-	console.log('bioData:', bioData);
-	console.log('spoof Data:', rooms[room].getSpoofData());
 	io.to(room).emit('bioData', bioData);
 
 	/* Spoof data [TODO] move this spoof calculation part to client side */
@@ -48,7 +47,6 @@ function sendData(room) {
 		let maxTop = spoofedInput+0.1;
 		let minTop = spoofedInput-0.1;
 		let randVal = Math.random() * (maxTop - minTop) + minTop;
-		console.log('Original & Spoofed data:', bioData['gsr'].value, randVal.toFixed(2));
 		bioData['gsr'].value = randVal.toFixed(2);
 		io.to(room).emit('spoofedBioData', bioData);
 		io.to(room).emit('displayData', bioData);
@@ -57,8 +55,10 @@ function sendData(room) {
 		io.to(room).emit('displayData', bioData);
 	}
 
-	if (room in rooms && rooms[room].numConnections > 0) {
-		setTimeout(sendData, 1000, room)
+	if (socket.connected) {
+		if (room in rooms && rooms[room].numConnections > 0) {
+			setTimeout(sendData, 1000, room, socket)
+		}
 	}
 }
 
@@ -74,13 +74,11 @@ function setSpoofValue(room, data) {
 }
 
 function setSpoofGSR(room, bool) {
-  console.log('Setting Spoof GSR: ', bool, room);
   rooms[room].setSpoof('gsr', bool);
   io.to(room).emit('setSpoofGSR', bool)
 }
 
 function setSpoofValueGSR(room, data) {
-	console.log('Setting Spoof GSR value: ', data, room);
 	rooms[room].setSpoofValue('gsr', parseFloat(data));
 	io.to(room).emit('setSpoofValueGSR', data)
 }
@@ -90,22 +88,7 @@ function setClientShowing(room, element, value) {
 	io.to(room).emit('showToClient' + element, value);
 }
 
-function leaveRoom(id, room) {
-	rooms[room].removeConnection(id);
-
-	if (rooms[room].numConnections<1) {
-		delete rooms[room];
-	}
-
-	console.log(id, 'disconnected.');
-	console.log(rooms);
-}
-
 io.on('connection', (socket) => {
-	console.log('a user connected');
-
-	console.log('ID:', socket.id);
-
 	socket.on('createRoom', name => {
 		console.log('createRoom:', name);
 		let room = createRoom(socket.id, name);
@@ -117,16 +100,13 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('joinRoom', room_name => {
-		console.log('joinRoom:', room_name);
-		let room = joinRoom(socket.id, room_name);
-		if(room=='undefined') {
-			socket.to(socket.id).emit('err-room-not-exist');
-		} else {
-			socket.join(room);
-		}
+		joinRoom(socket.id, room_name, socket);
+		socket.join(room_name);
+		console.log('User', socket.id, 'connected and joined Room', room_name);
 	});
 	
 	/* [TODO] handle remove from room */
+	/*
 	socket.on('disconnect', name => {
 		console.log('user disconnected');
 		try {
@@ -136,6 +116,21 @@ io.on('connection', (socket) => {
 			console.log(e);
 		}
 		leaveRoom(socket.id, Object.keys(socket.rooms)[1]);
+	});
+	*/
+
+	socket.on('disconnect', () => {
+		let room = guestList[socket.id]
+		try {
+			rooms[room].removeConnection(socket.id);
+			delete guestList[socket.id];
+		}
+		catch(err) {
+			console.log('Error:', err);
+		}
+		checkRoom(room);
+		console.log('Socket.io: Client disconnected on port ' + PORT);
+		console.log('Rooms:', rooms);
 	});
 
 	socket.on('gsrData', data => { addData('gsr', Object.keys(socket.rooms)[1], data); });
@@ -148,6 +143,12 @@ io.on('connection', (socket) => {
 	socket.on('showToClientBorder', data => {setClientShowing('Border', Object.keys(socket.rooms)[1], data)});
 	socket.on('showToClientStress', data => {setClientShowing('Stress', Object.keys(socket.rooms)[1], data)});
 });
+
+function checkRoom(room) {
+	if (rooms[room].numConnections==0) {
+		delete rooms[room];
+	}
+}
 
 http.listen(PORT, () => {
 	console.log('Listening on port', PORT);
