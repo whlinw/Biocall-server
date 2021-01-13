@@ -8,18 +8,6 @@ const PORT = 4001
 var rooms = {}
 var guestList = {}
 
-/* [TODO] handle existed rooms / REMOVE */
-function createRoom(id, room, socket) {
-	if (!(room in rooms)) {
-		rooms[room] = new Room(room);
-		rooms[room].addConnection(id);
-		sendData(room, socket);
-		return room
-	}
-	return
-}
-
-/* [TODO] handle not exist rooms */
 function joinRoom(id, room, socket) {
 	if (!(room in rooms)) {
 		rooms[room] = new Room(room);
@@ -47,12 +35,8 @@ function sendData(room, socket) {
 		let maxTop = spoofedInput+0.1;
 		let minTop = spoofedInput-0.1;
 		let randVal = Math.random() * (maxTop - minTop) + minTop;
-		bioData['gsr'].value = randVal.toFixed(2);
-		io.to(room).emit('spoofedBioData', bioData);
-		io.to(room).emit('displayData', bioData);
-		rooms[room].setSpoofDataGSR((parseFloat(bioData['gsr'].value)));
-	} else {
-		io.to(room).emit('displayData', bioData);
+		let spoofDataGSR = randVal.toFixed(2);
+		io.to(room).emit('spoofDataGSR', spoofDataGSR)
 	}
 
 	if (socket.connected) {
@@ -70,7 +54,6 @@ function setSpoofBorder(room, bool) {
 
 function setSpoofValue(room, data) {
 	rooms[room].setSpoofValue('border', parseFloat(data));
-	io.to(room).emit('spoofValue', data);
 }
 
 function setSpoofGSR(room, bool) {
@@ -80,7 +63,6 @@ function setSpoofGSR(room, bool) {
 
 function setSpoofValueGSR(room, data) {
 	rooms[room].setSpoofValue('gsr', parseFloat(data));
-	// io.to(room).emit('setSpoofValueGSR', data)
 }
 
 function setClientShowing(room, element, value) {
@@ -92,35 +74,11 @@ function setClientShowing(room, element, value) {
 io.on('connection', (socket) => {
 	console.log('New connection:', socket.id);
 
-	socket.on('createRoom', name => {
-		console.log('createRoom:', name);
-		let room = createRoom(socket.id, name);
-		if(room=='undefined') {
-			socket.to(socket.id).emit('err-room-already-exist');
-		} else {
-			socket.join(room);
-		}
-	});
-
 	socket.on('joinRoom', room_name => {
 		joinRoom(socket.id, room_name, socket);
 		socket.join(room_name);
 		console.log('User', socket.id, 'connected and joined Room', room_name);
 	});
-	
-	/* [TODO] handle remove from room */
-	/*
-	socket.on('disconnect', name => {
-		console.log('user disconnected');
-		try {
-			console.log(socket.id);
-		  	console.log(socket.rooms);
-		} catch(e) {
-			console.log(e);
-		}
-		leaveRoom(socket.id, Object.keys(socket.rooms)[1]);
-	});
-	*/
 
 	socket.on('disconnect', () => {
 		let room = guestList[socket.id]
@@ -133,7 +91,6 @@ io.on('connection', (socket) => {
 		}
 		checkRoom(room);
 		console.log('Socket.io: Client disconnected on port ' + PORT);
-		console.log('Rooms:', rooms);
 	});
 
 	socket.on('gsrData', data => {addData('gsr', Object.keys(socket.rooms)[1], data); });
