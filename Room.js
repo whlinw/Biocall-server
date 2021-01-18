@@ -34,8 +34,10 @@ class Room {
 	}
 
 	addConnection(id) {
-		this.connections.push(id);
-		this.numConnections += 1;
+		if (!this.connections.includes(id)) {
+			this.connections.push(id);
+			this.numConnections += 1;
+		}
 	}
 
 	removeConnection(id) {
