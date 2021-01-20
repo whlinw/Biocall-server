@@ -17,7 +17,6 @@ function joinRoom(id, room, socket) {
 		rooms[room].addConnection(id);
 	}
 	guestList[id] = room;
-	console.log('JoinRoom:', rooms);
 }
 
 function addData(type, room, data) {
@@ -65,7 +64,7 @@ function setSpoofValueGSR(room, data) {
 }
 
 function setClientShowing(room, element, value) {
-	console.log('setClientShowing:', element, value);
+	// console.log('setClientShowing:', element, value);
 	rooms[room].showClient[element] = value;
 	io.to(room).emit('showToClient' + element, value);
 }
@@ -76,7 +75,8 @@ io.on('connection', (socket) => {
 	socket.on('joinRoom', room_name => {
 		joinRoom(socket.id, room_name, socket);
 		socket.join(room_name);
-		console.log('User', socket.id, 'connected and joined Room', room_name);
+		console.log('User', socket.id, 'joined Room', room_name);
+		console.log('Current rooms:', rooms);
 	});
 
 	socket.on('disconnect', () => {
