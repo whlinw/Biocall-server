@@ -21,15 +21,14 @@ function joinRoom(id, room, socket) {
 }
 
 function addData(type, room, data) {
-	console.log('New data:', room, data);
-	rooms[room].setBioData('gsr', data);
+	// console.log('New data:', room, data);
+	rooms[room].setBioData(type, data);
 }
 
 function sendData(room, socket) {
 	let bioData = rooms[room].getBioData();
 	io.to(room).emit('bioData', bioData);
 
-	/* Spoof data [TODO] move this spoof calculation part to client side */
 	if (rooms[room].spoof['gsr'].on) {
 		let spoofedInput = rooms[room].spoof['gsr'].value;
 		let maxTop = spoofedInput+0.1;
@@ -94,6 +93,7 @@ io.on('connection', (socket) => {
 	});
 
 	socket.on('gsrData', data => {addData('gsr', Object.keys(socket.rooms)[1], data); });
+	socket.on('hrData', data => {addData('hr', Object.keys(socket.rooms)[1], data); });
 
 	socket.on('spoofBorder', bool => { setSpoofBorder(Object.keys(socket.rooms)[1], bool) });
 	socket.on('spoofValue', value => { setSpoofValue(Object.keys(socket.rooms)[1], value) });
