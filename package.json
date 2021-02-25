@@ -10,6 +10,7 @@
   "author": "Arne Reijntjes",
   "license": "ISC",
   "dependencies": {
+    "minimist": "^1.2.5",
     "node-osc": "^4.1.8",
     "socket.io": "^2.3.0"
   }
