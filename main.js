@@ -115,7 +115,7 @@ function setClientShowing(room, type, bool) {
 }
 
 io.on('connection', (socket) => {
-	console.log('[Log] New socket connection:', socket.id);
+	console.log('[Log] New socket connection:', socket.id, '(addr:', socket.request.connection.remoteAddress, ')');
 
 	socket.on('joinRoom', room_name => {
 		let numConn = joinRoom(socket.id, room_name, socket);
