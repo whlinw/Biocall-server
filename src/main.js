@@ -1,4 +1,6 @@
 const Room = require('./Room');
+const winston = require('winston');
+require('winston-daily-rotate-file');
 
 var argv = require('minimist')(process.argv.slice(2));
 
@@ -22,6 +24,37 @@ if (argv.port){
 	PORT = argv.port;
 }
 
+var logger = require('console')
+if (!argv.stdlog) {
+
+	var logPath = '/var/log/biocall-server'
+	if (argv.dev) {
+		logPath = './log'
+	}
+
+	logger = winston.createLogger({
+		format: winston.format.combine(winston.format.timestamp({format: 'YYYY-MM-DD HH:mm:ss'}), winston.format.json()),
+		transports: [
+			new (winston.transports.DailyRotateFile)({
+				level: 'info',
+				filename: logPath + '/info-%DATE%.log',
+				datePattern: 'YYYY-MM-DD',
+				zippedArchive: true,
+				maxSize: '20m',
+				maxFiles: '14d'
+			}),
+			new (winston.transports.DailyRotateFile)({
+				level: 'error',
+				filename: logPath + '/error-%DATE%.log',
+				datePattern: 'YYYY-MM-DD',
+				zippedArchive: true,
+				maxSize: '20m',
+				maxFiles: '14d'
+			})
+		],
+	});
+}
+
 var rooms = {};
 var guestList = {};
 
@@ -34,7 +67,9 @@ var guestList = {};
  */
 function joinRoom(id, room, socket) {
 	if (!(room in rooms)) {
+		logger.info('Room [' + room + '] not exists. Creating a new room ...');
 		rooms[room] = new Room(room);
+		logger.info('New room [' + room + '] created. Current rooms: ' + Object.keys(rooms));
 		rooms[room].addConnection(id);
 		sendData(room, socket);
 	} else {
@@ -115,32 +150,35 @@ function setClientShowing(room, type, bool) {
 }
 
 io.on('connection', (socket) => {
-	console.log('[Log] New socket connection:', socket.id, '(addr:', socket.request.connection.remoteAddress, ')');
+	logger.info('New socket connection: [' + socket.id + ']');
+
+	socket.on('role', data => {
+		logger.info('Client [' + socket.id + '] registered as ' + data.toUpperCase());
+	});
 
 	socket.on('joinRoom', room_name => {
 		let numConn = joinRoom(socket.id, room_name, socket);
+		logger.info('Client [' + socket.id + '] requests to join room [' + room_name + '] ...');
 		socket.join(room_name);
-		console.log('[Log] Client "' + socket.id + '" joined room "' + room_name + '". Connections in room "' + room_name + '": ' + numConn);
-		if (numConn == 1) {
-			console.log('[Log] New room "' + room_name + '" created. Current rooms:', Object.keys(rooms));
-		}
+		logger.info('Client [' + socket.id + '] joins room [' + room_name + ']. Connections in room [' + room_name + ']: ' + numConn);
 	});
 
 	socket.on('disconnect', () => {
 		let room = guestList[socket.id];
+		logger.info('Client [' + socket.id + '] from room [' + room + '] disconnected. Removing client from the room ...');
 		try {
 			rooms[room].removeConnection(socket.id);
 			delete guestList[socket.id];
 		}
 		catch(err) {
-			console.log('[Err] Error:', err);
+			logger.error('Error:', err);
 		}
-		console.log('[Log] Client "' + socket.id + '" from room "' + room + '" disconnected. Connections in room "' + room + '": ' + rooms[room].numConnections);
+		logger.info('Client [' + socket.id + '] removed from room [' + room + ']. Connections in room [' + room + ']: ' + rooms[room].numConnections);
 
 		// Check and delete the room if there is no connection in a room.
 		if (rooms[room].numConnections==0) {
 			delete rooms[room];
-			console.log('[Log] Room "' + room + '" removed. Current rooms:', Object.keys(rooms));
+			logger.info('Room [' + room + '] removed. Current rooms: ' + Object.keys(rooms));
 		}
 	});
 
@@ -154,6 +192,10 @@ io.on('connection', (socket) => {
 	socket.on('showToClientStress', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Stress', data)});
 });
 
+process.on('uncaughtException', function (err) {
+  logger.error('Caught exception: ' + err);
+});
+
 app.listen(PORT, () => {
-	console.log('[Log] Server started. Listening on port', PORT);
+	logger.info('Server started. Listening on port ' + PORT);
 });

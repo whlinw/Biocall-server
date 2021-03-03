@@ -1,17 +1,23 @@
 {
   "name": "biocall-server",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.0.0",
+  "description": "The server part of the Biocall application.",
   "main": "main.js",
+  "author": "Wei-Hsi Lin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whlinw/Biocall-server.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node main.js"
+    "start": "node ./src/main.js"
   },
-  "author": "Arne Reijntjes",
   "license": "ISC",
   "dependencies": {
     "minimist": "^1.2.5",
     "node-osc": "^4.1.8",
-    "socket.io": "^2.3.0"
+    "socket.io": "^2.3.0",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.0"
   }
 }
