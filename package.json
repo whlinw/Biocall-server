@@ -16,7 +16,7 @@
   "dependencies": {
     "minimist": "^1.2.5",
     "node-osc": "^4.1.8",
-    "socket.io": "^2.3.0",
+    "socket.io": "^2.4.1",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.0"
   }

@@ -1,10 +1,11 @@
-version: "3.8"
+version: "3.3"
 services:
   app:
     build: .
     image: biocall-server/app
     ports:
-      - 4001:4001 # the app uses port 4001
+      - 4001:4001
     volumes:
-      - "./log:/var/log/biocall-server" # log files stored in /var/log/biocall-server in the container
-                                        # ./log: directory on host machine to store log files
+      - biocall_data:/var/log/biocall-server
+volumes:
+  biocall_data:
