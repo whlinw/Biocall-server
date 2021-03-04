@@ -153,12 +153,12 @@ io.on('connection', (socket) => {
 	logger.info('New socket connection: [' + socket.id + ']');
 
 	socket.on('role', data => {
-		logger.info('Client [' + socket.id + '] registered as ' + data.toUpperCase());
+		logger.info('Client [' + socket.id + '] registered as ' + data.toUpperCase() + '.');
 	});
 
 	socket.on('joinRoom', room_name => {
-		let numConn = joinRoom(socket.id, room_name, socket);
 		logger.info('Client [' + socket.id + '] requests to join room [' + room_name + '] ...');
+		let numConn = joinRoom(socket.id, room_name, socket);
 		socket.join(room_name);
 		logger.info('Client [' + socket.id + '] joins room [' + room_name + ']. Connections in room [' + room_name + ']: ' + numConn);
 	});
