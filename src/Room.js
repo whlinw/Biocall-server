@@ -3,7 +3,8 @@ class Room {
 		this.name = room;
 		this.bioData = {'gsr': 0.0};
 		this.showClient = {'Border': false, 'Stress': false};
-		this.spoof = {'gsr': {on: false, value:1}}
+		this.userOpen = {'Control': false, 'Chart': false};
+		this.spoof = {'gsr': {on: false, value: 1}};
 		this.numConnections = 0;
 		this.connections = [];
 	}
@@ -13,7 +14,7 @@ class Room {
 	 * @return {Object}			Room data including spoof & feedback settings.
 	 */
 	getRoomData() {
-		let data = {spoof: this.spoof, showClient: this.showClient};
+		let data = {spoof: this.spoof, showClient: this.showClient, userOpen: this.userOpen};
 		return data;
 	}
 	

@@ -71,7 +71,7 @@ function joinRoom(id, room, socket) {
 		rooms[room] = new Room(room);
 		logger.info('New room [' + room + '] created. Current rooms: ' + Object.keys(rooms));
 		rooms[room].addConnection(id);
-		sendData(room, socket);
+		sendData(room);
 	} else {
 		rooms[room].addConnection(id);
 		let roomData = rooms[room].getRoomData();
@@ -94,9 +94,8 @@ function addData(type, room, data) {
 /**
  * Send all the latest biodata to all users in a room.
  * @param {string} room		Name of the room.
- * @param {Object} socket	Socket object of the user that provides biodata.
  */
-function sendData(room, socket) {
+function sendData(room) {
 	if (typeof(rooms[room])==='undefined') {
 		return;
 	}
@@ -112,10 +111,8 @@ function sendData(room, socket) {
 		io.to(room).emit('spoofDataGSR', spoofDataGSR);
 	}
 
-	if (socket.connected) {
-		if (room in rooms && rooms[room].numConnections > 0) {
-			setTimeout(sendData, 1000, room, socket);
-		}
+	if (room in rooms && rooms[room].numConnections > 0) {
+		setTimeout(sendData, 1000, room);
 	}
 }
 
@@ -139,6 +136,15 @@ function setSpoofValueGSR(room, data) {
 }
 
 /**
+ * Relay the max GSR value to a room.
+ * @param {string} room		Name of the room.
+ * @param {string} data		Max value.
+ */
+function setMaxGSR(room, data) {
+	io.to(room).emit('setMaxGSR', data);
+}
+
+/**
  * Set biofeedback to be visible/invisible to the client of a room. 
  * @param {string} room		Name of the room.
  * @param {string} type		Type of feedback. 
@@ -147,6 +153,17 @@ function setSpoofValueGSR(room, data) {
 function setClientShowing(room, type, bool) {
 	rooms[room].showClient[type] = bool;
 	io.to(room).emit('showToClient' + type, bool);
+}
+
+/**
+ * Record user activity in a room. 
+ * @param {string} room		Name of the room.
+ * @param {string} type		Type of activity. Chart or Control. 
+ * @param {bool} bool		Data value.
+ */
+function setUserOpen(room, type, bool) {
+	rooms[room].userOpen[type] = bool;
+	io.to(room).emit('userOpen' + type, bool);
 }
 
 io.on('connection', (socket) => {
@@ -161,6 +178,7 @@ io.on('connection', (socket) => {
 		let numConn = joinRoom(socket.id, room_name, socket);
 		socket.join(room_name);
 		logger.info('Client [' + socket.id + '] joins room [' + room_name + ']. Connections in room [' + room_name + ']: ' + numConn);
+		io.to(room_name).emit('numConnections', numConn);
 	});
 
 	socket.on('disconnect', () => {
@@ -179,6 +197,8 @@ io.on('connection', (socket) => {
 		if (rooms[room].numConnections==0) {
 			delete rooms[room];
 			logger.info('Room [' + room + '] removed. Current rooms: ' + Object.keys(rooms));
+		} else {
+			io.to(room).emit('numConnections', rooms[room].numConnections);
 		}
 	});
 
@@ -187,9 +207,13 @@ io.on('connection', (socket) => {
 
 	socket.on('spoofGSR', bool => { setSpoofGSR(Object.keys(socket.rooms)[1], bool) });
 	socket.on('spoofValueGSR', value => { setSpoofValueGSR(Object.keys(socket.rooms)[1], value) });
+	socket.on('spoofMaxGSR', value => { setMaxGSR(Object.keys(socket.rooms)[1], value) });
 
 	socket.on('showToClientBorder', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Border', data)});
 	socket.on('showToClientStress', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Stress', data)});
+
+	socket.on('userOpenControl', data => {setUserOpen(Object.keys(socket.rooms)[1], 'Control', data)});
+	socket.on('userOpenChart', data => {setUserOpen(Object.keys(socket.rooms)[1], 'Chart', data)});
 });
 
 process.on('uncaughtException', function (err) {
