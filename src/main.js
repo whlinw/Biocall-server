@@ -59,7 +59,8 @@ var rooms = {};
 var guestList = {};
 
 /**
- * Add a connection to a room. A new room is created if the room is not existed.
+ * Add a connection to a room. A new room is created if the room is not existed. 
+ * Data start sending after a new room is created. If the room exists, send roomData to the connected user for initialization.
  * @param {string} id		Connection ID.
  * @param {string} room		Name of the room.
  * @param {Object} socket	Socket object of the connection.
@@ -141,7 +142,18 @@ function setSpoofValueGSR(room, data) {
  * @param {string} data		Max value.
  */
 function setMaxGSR(room, data) {
+	rooms[room].spoof['gsr'].max = data;
 	io.to(room).emit('setMaxGSR', data);
+}
+
+/**
+ * Relay the min GSR value to a room.
+ * @param {string} room		Name of the room.
+ * @param {string} data		Min value.
+ */
+function setMinGSR(room, data) {
+	rooms[room].spoof['gsr'].min = data;
+	io.to(room).emit('setMinGSR', data);
 }
 
 /**
@@ -208,6 +220,8 @@ io.on('connection', (socket) => {
 	socket.on('spoofGSR', bool => { setSpoofGSR(Object.keys(socket.rooms)[1], bool) });
 	socket.on('spoofValueGSR', value => { setSpoofValueGSR(Object.keys(socket.rooms)[1], value) });
 	socket.on('spoofMaxGSR', value => { setMaxGSR(Object.keys(socket.rooms)[1], value) });
+	socket.on('spoofMinGSR', value => { setMinGSR(Object.keys(socket.rooms)[1], value) });
+
 
 	socket.on('showToClientBorder', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Border', data)});
 	socket.on('showToClientStress', data => {setClientShowing(Object.keys(socket.rooms)[1], 'Stress', data)});

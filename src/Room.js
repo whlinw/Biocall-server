@@ -4,7 +4,7 @@ class Room {
 		this.bioData = {'gsr': 0.0};
 		this.showClient = {'Border': false, 'Stress': false};
 		this.userOpen = {'Control': false, 'Chart': false};
-		this.spoof = {'gsr': {on: false, value: 1}};
+		this.spoof = {'gsr': {on: false, value: 1, max: -1, min: -1}};
 		this.numConnections = 0;
 		this.connections = [];
 	}
